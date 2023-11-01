@@ -15,15 +15,32 @@ import (
 )
 
 func main() {
-	var url, targetParentFolder, proxyURLHead string
+	var url, url_exact, targetParentFolder, proxyURLHead string
 	flag.StringVar(&url, "u", "", "huggingface url,such as: https://huggingface.co/datasets/Mizukiluke/ureader-instruction-1.0/tree/main")
+	flag.StringVar(&url_exact, "ue", "", "exact download url,such as: https://huggingface.co/datasets/Mizukiluke/ureader-instruction-1.0/resolve/main/ChartQA.tar")
 	flag.StringVar(&targetParentFolder, "f", "./", "target folder")
 	flag.StringVar(&proxyURLHead, "p", "https://worker-share-proxy-01f5.xieincz.tk/", "proxy url")
 	flag.Parse()
+	
+	// 1. 处理特定的下载链接（url）
+	if url_exact != "" {
+		fileName := path.Base(url_exact)
+		proxyFileURL := proxyURLHead + urlEncode(url_exact)
+		fmt.Printf("download url: %s\n", url_exact)
+		fmt.Printf("download filename: %s\n", fileName)
+		if err := downloadFileWithProgressBar(proxyFileURL, path.Join(targetParentFolder, fileName)); err != nil {
+			fmt.Printf("cannot download file %s: %v\n", url_exact, err)
+		} else {
+			return
+		}
+	}
+	
+	// 2. 处理huggingface
 	if url == "" {
 		flag.Usage()
 		return
 	}
+
 	if !strings.HasPrefix(url, "https://huggingface.co/") {
 		fmt.Printf("invalid url: %s\n", url)
 		return
